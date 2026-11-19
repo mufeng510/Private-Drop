@@ -69,12 +69,19 @@
 - **功能补全**：上传绑定消息并在删除/过期时取消与清理；附件状态 WS 同步；链接预览持久化；服务端上传并发限制；附件标签与批量接口；真实磁盘警戒与建议；keyset 分页；编辑不改期限；僵死上传清理与 `needs_source`；持久化 WS 事件日志；ZIP 原始目录；批量恢复模式；通知开关生效；resetpwd 审计；上传字节字段。
 - **前端补全**：搜索结果操作与批量；PWA 文件分享；回收站批量；消息/文件批量工具栏；搜索大小/标签/设备筛选；标签图标与排序；自动定位最新；并发设置恢复；Esc 退出操作；登录有效期选项。
 
+### 6.1 第三轮：此前「未验证」项的自动化补测
+
+- **虚拟 Passkey 端到端**：`web/e2e/real/passkey.spec.ts`，用 CDP 虚拟验证器在浏览器中注册 Passkey，随后清除会话并用「通行密钥登录」成功 → **通过**。
+- **完整 TOTP 流程**：`web/e2e/real/totp.spec.ts`，从界面读取密钥、用 RFC6238 生成验证码启用 TOTP，再走「密码 → TOTP」两步登录成功 → **通过**。
+- **双设备实时同步**：`web/e2e/real/realtime.spec.ts`，两个独立浏览器上下文（不同设备标识）登录，A 发送消息后 B 不经刷新即收到 → **通过**。
+- **SSRF 重定向复验**：`internal/linkpreview/redirect_internal_test.go`，注入解析器模拟「公开域名 → 私网重定向」，验证跳转目标被拒绝 → **通过**。
+- 运行方式：本地 `bash` 启动后端后 `npm run test:e2e:real`；CI 新增 `e2e-real` Job，发布 GHCR 前必须通过。
+
 ## 7. 未执行 / 未验证（不得视为通过）
 
 - GitHub Actions 与 GHCR 发布：已真实运行并通过（run `44508779998`，https://github.com/mufeng510/Private-Drop/actions/runs/44508779998）；Backend / Frontend / Security scan / Docker build / Publish to GHCR 五个 Job 全部成功；GHCR 包 `private-drop` 已发布 `latest` 与 `sha-859896f`。SemVer 标签需推送 `v*` 标签才会产生，未测试。
-- Passkey/WebAuthn 真实验证器端到端：未执行（代码路径已编译通过，前端按标准流程实现）。
-- TOTP 在浏览器中完整启用流程：未执行（后端 TOTP 单元/API 逻辑已测试）。
-- WebSocket 多设备实时同步：已由双客户端 Go 集成测试覆盖广播与 `since` 重放去重；**未做两设备真实浏览器联调**。
-- 链接解析对真实外部站点抓取：仅验证了 SSRF 拦截与 URL 提取用例，未做真实站点集成测试；DNS 重绑定/重定向绕过未自动化验证。
+- Passkey / TOTP / 双设备实时同步：已由真实后端浏览器 E2E 覆盖（见 6.1），不再列为未验证。
+- 链接解析对真实外部站点抓取：`TestRealExternalPreview` 在本沙箱被跳过——DNS 把公网域名解析到 `198.18.0.0/15` 基准测试保留段，SSRF 策略**正确地**拒绝了该地址，因此无法在此环境验证真实外网抓取；DNS 重绑定攻击（解析在校验与连接间变化）未单独模拟。重定向复验已通过。
+- 真实 Cloudflare Tunnel 环境：未验证（见下条）。
 - 手机系统分享的文件接收已实现（POST multipart + 自定义 SW），但受 iOS 无 Share Target / 后台上传限制，见 `docs/KNOWN_LIMITATIONS.md`。
 - 经 Cloudflare Tunnel 的公网请求不会被视为局域网：代码层 fail-closed 已实现，未在真实 Tunnel 环境复测。

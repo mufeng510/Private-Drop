@@ -64,6 +64,18 @@ func IsBlockedIP(ip net.IP) bool {
 	return false
 }
 
+// Test seams: production uses the real resolver/dialer; tests can inject a
+// resolver that maps a fake public hostname to a local server to exercise the
+// full redirect chain without needing a public IP.
+var lookupIPAddr = func(ctx context.Context, host string) ([]net.IPAddr, error) {
+	return net.DefaultResolver.LookupIPAddr(ctx, host)
+}
+
+var dialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
+	d := &net.Dialer{Timeout: 4 * time.Second, KeepAlive: 30 * time.Second}
+	return d.DialContext(ctx, network, addr)
+}
+
 var blockedSuffixes = []string{
 	".localhost", ".local", ".internal", ".home.arpa", ".localdomain",
 }
@@ -97,7 +109,7 @@ func validate(ctx context.Context, raw string) (target string, u *url.URL, err e
 		return "", nil, ErrBlocked
 	}
 
-	ips, err := net.DefaultResolver.LookupIPAddr(ctx, host)
+	ips, err := lookupIPAddr(ctx, host)
 	if err != nil {
 		return "", nil, fmt.Errorf("%w: dns lookup failed", ErrBlocked)
 	}
@@ -179,8 +191,7 @@ func (p *Previewer) clientFor(target string) *http.Client {
 			if err != nil || IsBlockedIP(net.ParseIP(host)) {
 				return nil, ErrBlocked
 			}
-			d := &net.Dialer{Timeout: 4 * time.Second, KeepAlive: 30 * time.Second}
-			return d.DialContext(ctx, network, target)
+			return dialContext(ctx, network, target)
 		},
 		TLSClientConfig:     &tls.Config{MinVersion: tls.VersionTLS12},
 		MaxIdleConns:        1,

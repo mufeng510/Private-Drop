@@ -43,10 +43,9 @@ docker compose up -d
 将备份的 `data/` 还原到同一路径后 `docker compose up -d`；迁移与升级/回滚见 `docs/UPGRADE_ROLLBACK.md`。
 
 ## 11. 已知问题
-- Passkey 真实验证器、TOTP 浏览器完整启用未端到端测试。
-- 双浏览器实时同步未做真实联调（后端已有双客户端集成测试）。
-- 经 Cloudflare Tunnel 的公网请求判定未在真实 Tunnel 环境复测（代码已 fail-closed）。
-- 链接解析未对真实站点抓取、DNS 重绑定/重定向绕过做自动化测试。
+- Passkey（CDP 虚拟验证器）、TOTP 完整启用与登录、双浏览器实时同步已由真实后端 E2E 覆盖并通过。
+- 经 Cloudflare Tunnel 的公网请求判定未在真实 Tunnel 环境复测（代码已 fail-closed）；此项需要用户自己的 Cloudflare 账户与隧道。
+- 链接解析的重定向复验已自动化通过；真实外网抓取受本沙箱 DNS 拦截限制无法验证（拦截地址段被 SSRF 策略正确拒绝）；DNS 重绑定攻击未单独模拟。
 - 视频缩略图与 Office 在线转换降级为下载；iOS 无 Web Share Target。
 - 依赖安全扫描（govulncheck / npm audit）为非阻断报告，需人工复核。
 - 详见 `docs/KNOWN_LIMITATIONS.md`、`docs/SECURITY.md`。

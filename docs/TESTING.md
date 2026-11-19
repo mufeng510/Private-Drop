@@ -53,10 +53,10 @@ cd web && npm audit --audit-level=high             # 前端依赖漏洞
 
 - [x] 未登录访问 `/api/messages`、`/api/files/*` 被拒绝 — `internal/api/api_test.go`、`internal/api/completion_test.go` + 真实浏览器冒烟
 - [x] 未授权无法下载附件/缩略图/ZIP — `TestPreviewThumbnailZIPAndSecurityHTTP`（无令牌均 401）；复制的站内链接无令牌同样 401（所有端点统一鉴权）
-- [x] 撤销设备后会话立即失效 — `internal/auth/auth_test.go`；WS 连接由 `Hub.DisconnectDevice` 主动关闭（代码路径已实现，未做双浏览器联调）
+- [x] 撤销设备后会话立即失效 — `internal/auth/auth_test.go`；WS 连接由 `Hub.DisconnectDevice` 主动关闭；双浏览器实时同步已由 `web/e2e/real/realtime.spec.ts` 覆盖
 - [x] 初始化完成后无法再次创建管理员 — `TestInitOnceAndLogin` + 代理头 fail-closed 用例
 - [x] 管理界面二次验证 — API 门禁测试 `TestMFAGateOnSettings` + 浏览器验证；Passkey/真实 TOTP 设备流程未端到端测试
-- [ ] SSRF：localhost / 私网 / 元数据已由 `TestSSRFBlocking` 覆盖；**DNS 重绑定与重定向后的二次校验未做自动化测试**（实现已包含该防护）
+- [x] SSRF：localhost / 私网 / 元数据由 `TestSSRFBlocking` 覆盖；重定向后二次校验由 `TestRedirectRevalidation` 覆盖；DNS 重绑定攻击未单独模拟
 - [x] 恶意文件名不能越出实体目录 — `TestSanitizeFileName` + ZIP Zip-Slip 测试（含 Windows 盘符前缀）
 - [x] 删除消息不会误删其他消息引用的实体文件 — `TestDedupAndRefCount`、`internal/clean` 清理测试
 - [x] 日志中不含密码/令牌/密钥/文件内容 — 只读审查确认（审计详情与请求日志仅记路径与操作名）
