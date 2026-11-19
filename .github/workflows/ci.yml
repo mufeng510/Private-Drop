@@ -189,7 +189,7 @@ jobs:
       #   - sha-<commit>  : 每次发布都带，便于精确回滚
       - name: Docker metadata (tags & labels)
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: ghcr.io/${{ github.repository }}
           tags: |
