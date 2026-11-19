@@ -123,8 +123,11 @@
 - 公网推荐 Cloudflare Tunnel + Access + HTTPS；应用自身鉴权独立有效。
 - 公网限制已按官方文档（2026）核实：Free/Pro 单请求 100 MB、Business 200 MB、Enterprise 自助最高 5 GB；分片上传仅绕过应用层限制，代理层限制与超时仍在（见 `docs/CLOUDFLARE.md`）。
 
-## 12. 当前进度（首次完整实现已完成，2026-11-19）
-- 阶段 0～6 的代码、测试、Docker/CI 与文档均已产出。
+## 12. 当前进度（审计后补全完成，2026-11-19 第二轮）
+- 首轮 0～6 阶段已交付；针对任务书逐节审计发现的缺口已完成第二轮补全，详见 `docs/TEST_REPORT.md`。
+- 第二轮新增：上传与消息绑定及删除/过期取消、附件 WS 同步、链接预览持久化、服务端上传并发限制、附件标签与文件批量接口、真实磁盘警戒与建议、keyset 分页、编辑保留期限、僵死上传清理与 needs_source、持久化 WS 事件日志、ZIP 原始目录、批量恢复模式、通知开关生效、resetpwd 审计、上传字节字段；前端搜索/文件/回收站批量操作、PWA 文件分享、标签图标排序、自动定位最新、并发设置恢复、Esc 退出、登录有效期、Playwright E2E、ESLint。
+- GitHub Actions 首次真实运行（run 44508779998）：Backend / Frontend / Security scan / Docker build / Publish to GHCR 全部成功；GHCR 已发布 `latest` 与 `sha-859896f`。
+- 任务列表已清空并重建为 4 条补全任务（plan 95d48f9e…）。
 - 计划与 7 条阶段任务已录入 OpenChamber 项目知识（plan + todos）。
 - 已验证（本机实测，非推断）：
   - `gofmt -l .`（无输出）、`go vet ./...`、`go build ./...`、`go test -count=1 ./...`（全部通过）。
@@ -135,6 +138,7 @@
 
 ## 13. 已知问题 / 未验证项
 - 已按只读安全审查修复：设备身份改用客户端生成的 `X-Device-Key`（名称不再作为身份，防止审批绕过）；撤销设备立即断开其 WebSocket；MFA 令牌按设备绑定并在登出/注册二次因子时撤销；设备管理接口加 MFA 门禁（一次性码审批除外）；初始化在事务内二次检查，消除并发抢注 TOCTOU。
+- 第二轮仍未验证：Passkey 真实验证器、TOTP 浏览器完整启用、双浏览器实时同步、真实 Tunnel 环境 LAN 判定、链接解析对真实站点抓取与 DNS 重绑定。
 - Passkey/WebAuthn 已实现并通过编译，但未使用真实验证器（硬件密钥/平台验证器）做端到端联调；TOTP 已实现但未在浏览器中走通完整启用流程。
 - WS 历史补齐使用进程内环形缓冲，服务重启后缓冲丢失；限流状态亦为进程内（单实例自用场景可接受）。
 - 缩略图仅支持图片；视频返回 `THUMBNAIL_UNAVAILABLE` 由前端回退；Office 文件仅下载不在线转换。

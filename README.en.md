@@ -80,6 +80,9 @@ Retention, upload limits/concurrency, device policy, link preview, language, not
 | [Security](docs/SECURITY.md) | Security model, SSRF/file safety, log redaction, review requirements |
 | [Known limitations](docs/KNOWN_LIMITATIONS.md) | Browser differences, Cloudflare limits, no built-in backup |
 | [Testing](docs/TESTING.md) | Test commands, security checklist, report template |
+| [Test report](docs/TEST_REPORT.md) | Actually executed verification and remaining unverified items |
+| [Configuration](docs/CONFIGURATION.md) | Environment variables and all business settings keys |
+| [Final report](docs/FINAL_REPORT.md) | Delivered scope, stack, tests and deployment summary |
 | [API contract](docs/API_CONTRACT.md) | Frontend/backend interface (single source of truth) |
 
 ## Tech stack

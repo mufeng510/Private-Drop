@@ -20,5 +20,10 @@ coverage.txt
 .idea/
 .vscode/
 
+# Playwright artifacts
+web/test-results/
+web/playwright-report/
+blob-report/
+
 # temp
 /tmp/

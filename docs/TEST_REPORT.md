@@ -71,7 +71,7 @@
 
 ## 7. 未执行 / 未验证（不得视为通过）
 
-- GitHub Actions 与 GHCR 发布：流水线文件已创建；**待提交推送后核验真实运行结果**。
+- GitHub Actions 与 GHCR 发布：已真实运行并通过（run `44508779998`，https://github.com/mufeng510/Private-Drop/actions/runs/44508779998）；Backend / Frontend / Security scan / Docker build / Publish to GHCR 五个 Job 全部成功；GHCR 包 `private-drop` 已发布 `latest` 与 `sha-859896f`。SemVer 标签需推送 `v*` 标签才会产生，未测试。
 - Passkey/WebAuthn 真实验证器端到端：未执行（代码路径已编译通过，前端按标准流程实现）。
 - TOTP 在浏览器中完整启用流程：未执行（后端 TOTP 单元/API 逻辑已测试）。
 - WebSocket 多设备实时同步：已由双客户端 Go 集成测试覆盖广播与 `since` 重放去重；**未做两设备真实浏览器联调**。

@@ -81,6 +81,9 @@ docker compose ps && docker compose logs -f
 | [安全说明](docs/SECURITY.md) | 安全模型、SSRF/文件安全、日志脱敏、安全审查要求 |
 | [已知限制](docs/KNOWN_LIMITATIONS.md) | 浏览器能力差异、Cloudflare 限制、无内置备份等 |
 | [测试指南](docs/TESTING.md) | 各层测试命令、安全清单、测试报告模板 |
+| [测试报告](docs/TEST_REPORT.md) | 实际执行过的验证与未验证项 |
+| [配置说明](docs/CONFIGURATION.md) | 环境变量与所有业务设置键 |
+| [最终交付报告](docs/FINAL_REPORT.md) | 完成情况、技术栈、测试与部署汇总 |
 | [API 契约](docs/API_CONTRACT.md) | 前后端接口约定（唯一事实来源） |
 
 ## 技术栈
