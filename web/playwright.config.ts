@@ -8,6 +8,8 @@ import { defineConfig, devices } from '@playwright/test';
  */
 export default defineConfig({
   testDir: './e2e',
+  // Real-backend specs live in e2e/real and are run by a separate config/job.
+  testIgnore: ['real/**'],
   timeout: 30_000,
   expect: { timeout: 7_000 },
   fullyParallel: false,
