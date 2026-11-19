@@ -13,7 +13,7 @@
 ## 3. 测试通过情况
 - Go：`gofmt`/`go vet`/`go build` 通过；`go test ./...` 全部包通过（含 HTTP 集成测试：登录、上传生命周期与续传、预览、ZIP 与 Zip-Slip、缩略图、标签、文件批量、无令牌 401；双客户端 WS 广播与 `since` 重放；分页并列、编辑保留期限、恢复模式回归测试）。
 - 前端：TypeScript 0 错误；ESLint 0 error / 0 warning；Vitest 4 文件 / 23 测试通过；生产构建成功。
-- Playwright E2E：10 个用例全部通过（导航、消息流、搜索、上传、画廊、文件、回收站、管理界面、390px 移动端、PWA 分享与 SW）。
+- Playwright E2E：mock 后端 10 个用例全部通过（导航、消息流、搜索、上传、画廊、文件、回收站、管理界面、390px 移动端、PWA 分享与 SW）；真实后端 3 个用例全部通过（虚拟 Passkey 注册/登录、完整 TOTP 启用与登录、双设备实时同步），已纳入 CI 的 `e2e-real` Job。
 - 真实浏览器连通 Docker 后端：登录、发消息、管理界面、存储统计、设备列表，0 条 console error。
 - 详见 `docs/TEST_REPORT.md`。
 

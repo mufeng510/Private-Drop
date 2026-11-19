@@ -75,11 +75,11 @@
 - **完整 TOTP 流程**：`web/e2e/real/totp.spec.ts`，从界面读取密钥、用 RFC6238 生成验证码启用 TOTP，再走「密码 → TOTP」两步登录成功 → **通过**。
 - **双设备实时同步**：`web/e2e/real/realtime.spec.ts`，两个独立浏览器上下文（不同设备标识）登录，A 发送消息后 B 不经刷新即收到 → **通过**。
 - **SSRF 重定向复验**：`internal/linkpreview/redirect_internal_test.go`，注入解析器模拟「公开域名 → 私网重定向」，验证跳转目标被拒绝 → **通过**。
-- 运行方式：本地 `bash` 启动后端后 `npm run test:e2e:real`；CI 新增 `e2e-real` Job，发布 GHCR 前必须通过。
+- 运行方式：本地 `bash` 启动后端后 `npm run test:e2e:real`；CI 新增 `e2e-real` Job，发布 GHCR 前必须通过。真实运行记录：Actions run `44516962959`，六个 Job（含 `E2E against real backend`）全部成功。
 
 ## 7. 未执行 / 未验证（不得视为通过）
 
-- GitHub Actions 与 GHCR 发布：已真实运行并通过（run `44508779998`，https://github.com/mufeng510/Private-Drop/actions/runs/44508779998）；Backend / Frontend / Security scan / Docker build / Publish to GHCR 五个 Job 全部成功；GHCR 包 `private-drop` 已发布 `latest` 与 `sha-859896f`。SemVer 标签需推送 `v*` 标签才会产生，未测试。
+- GitHub Actions 与 GHCR 发布：已真实运行并通过（最新 run `44516962959`，https://github.com/mufeng510/Private-Drop/actions/runs/44516962959）；Backend / Frontend / Security scan / Docker build / E2E against real backend / Publish to GHCR 六个 Job 全部成功；GHCR 包 `private-drop` 已发布 `latest` 与 `sha-4d58cfd`。SemVer 标签需推送 `v*` 标签才会产生，未测试。
 - Passkey / TOTP / 双设备实时同步：已由真实后端浏览器 E2E 覆盖（见 6.1），不再列为未验证。
 - 链接解析对真实外部站点抓取：`TestRealExternalPreview` 在本沙箱被跳过——DNS 把公网域名解析到 `198.18.0.0/15` 基准测试保留段，SSRF 策略**正确地**拒绝了该地址，因此无法在此环境验证真实外网抓取；DNS 重绑定攻击（解析在校验与连接间变化）未单独模拟。重定向复验已通过。
 - 真实 Cloudflare Tunnel 环境：未验证（见下条）。
