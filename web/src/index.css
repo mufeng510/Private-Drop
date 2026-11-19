@@ -1,0 +1,157 @@
+@import 'tailwindcss';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  color-scheme: light;
+  --pd-accent: #2563eb;
+}
+
+.dark {
+  color-scheme: dark;
+  --pd-accent: #60a5fa;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family:
+    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue',
+    'PingFang SC', 'Microsoft YaHei', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Visually hidden but available to assistive technology (skip links, icon-only buttons). */
+.visually-hidden:where(:not(:focus-within, :active)) {
+  position: absolute !important;
+  clip-path: inset(50%) !important;
+  overflow: hidden !important;
+  width: 1px !important;
+  height: 1px !important;
+  margin: -1px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  white-space: nowrap !important;
+}
+
+.skip-link:focus {
+  position: fixed;
+  top: 0.5rem;
+  left: 0.5rem;
+  z-index: 100;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  background: var(--pd-accent);
+  color: #fff;
+}
+
+/* Native dialog: contain scroll gestures; ::backdrop needs its own overflow rule. */
+dialog:modal {
+  overscroll-behavior: contain;
+}
+dialog::backdrop {
+  overflow: hidden;
+  overscroll-behavior: contain;
+  background: rgb(15 23 42 / 0.5);
+  backdrop-filter: blur(2px);
+}
+dialog[open] {
+  animation: pd-dialog-in 120ms ease-out;
+}
+@keyframes pd-dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.99);
+  }
+}
+
+/* Native progress with fully custom styling (per modern-web guidance). */
+progress.pd-progress {
+  appearance: none;
+  border: 0 solid;
+  overflow: clip;
+  border-radius: 1e5px;
+  background: var(--pd-progress-track, rgb(148 163 184 / 0.35));
+  box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.08);
+  inline-size: 100%;
+  block-size: 0.5rem;
+  container-type: inline-size;
+  --pd-progress-fill: var(--pd-accent);
+  --pd-progress-radius: 1e5px;
+  --pd-progress-indeterminate-size: 30%;
+  --pd-progress-indeterminate-duration: 1.5s;
+}
+progress.pd-progress::-webkit-progress-bar {
+  background: transparent;
+}
+progress.pd-progress::-webkit-progress-value {
+  background: var(--pd-progress-fill);
+  border-radius: var(--pd-progress-radius);
+  transition: inline-size 0.25s ease;
+  animation: var(--pd-progress-animation, revert-rule);
+}
+progress.pd-progress::-moz-progress-bar {
+  background: var(--pd-progress-fill);
+  border-radius: var(--pd-progress-radius);
+  transition: inline-size 0.25s ease;
+  animation: var(--pd-progress-animation, revert-rule);
+}
+progress.pd-progress:indeterminate {
+  --pd-progress-animation: pd-progress-indeterminate var(--pd-progress-indeterminate-duration) infinite linear;
+}
+progress.pd-progress:dir(rtl) {
+  --pd-progress-animation: pd-progress-indeterminate var(--pd-progress-indeterminate-duration) infinite linear reverse;
+}
+@keyframes pd-progress-indeterminate {
+  from,
+  to {
+    inline-size: var(--pd-progress-indeterminate-size);
+    margin-right: auto;
+  }
+  from {
+    translate: -100%;
+  }
+  to {
+    translate: 100cqi;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  progress.pd-progress {
+    --pd-progress-indeterminate-duration: 10s;
+  }
+  dialog[open] {
+    animation: none;
+  }
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Thin, unobtrusive scrollbars. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(148 163 184 / 0.5) transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background: rgb(148 163 184 / 0.5);
+  border-radius: 999px;
+}
+
+:focus-visible {
+  outline: 2px solid var(--pd-accent);
+  outline-offset: 2px;
+}

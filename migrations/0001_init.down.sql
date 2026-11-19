@@ -1,0 +1,19 @@
+-- Rollback for the initial schema. Drops all application tables and data.
+DROP TABLE IF EXISTS mfa_tokens;
+DROP TABLE IF EXISTS link_previews;
+DROP TABLE IF EXISTS logs;
+DROP TABLE IF EXISTS audit_logs;
+DROP TABLE IF EXISTS notifications;
+DROP TABLE IF EXISTS uploads;
+DROP TABLE IF EXISTS attachment_tags;
+DROP TABLE IF EXISTS message_tags;
+DROP TABLE IF EXISTS tags;
+DROP TABLE IF EXISTS message_attachments;
+DROP TABLE IF EXISTS attachments;
+DROP TABLE IF EXISTS entity_files;
+DROP TABLE IF EXISTS messages;
+DROP TABLE IF EXISTS device_requests;
+DROP TABLE IF EXISTS sessions;
+DROP TABLE IF EXISTS devices;
+DROP TABLE IF EXISTS settings;
+DROP TABLE IF EXISTS users;

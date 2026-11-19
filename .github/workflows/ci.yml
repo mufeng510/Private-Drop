@@ -1,0 +1,220 @@
+# Private Drop CI/CD
+# 触发：main 分支 push / PR，以及 v* 标签 push；也支持手动触发。
+# 任务：后端校验、前端校验、Docker 构建、安全依赖扫描、GHCR 发布。
+# 发布：主分支 push 打 latest + SHA 标签；v* 标签额外打 SemVer 标签并生成 Release 说明。
+name: CI
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+# 同一分支/PR 上的重复运行自动取消，节省 NAS 侧与 Runner 资源
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ---------------------------------------------------------------- 后端
+  backend:
+    name: Backend (Go 1.27)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.27'
+          cache: true
+
+      - name: go vet
+        run: go vet ./...
+
+      - name: Unit & integration tests
+        run: go test ./...
+
+      - name: Build all packages (server + resetpwd)
+        run: go build ./...
+
+  # ---------------------------------------------------------------- 前端
+  frontend:
+    name: Frontend (Node 24)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install dependencies (lockfile only)
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit / component tests
+        run: npm test
+
+      - name: E2E tests (system Chrome)
+        run: npm run test:e2e
+
+      - name: Production build
+        run: npm run build
+
+  # ------------------------------------------------------------ Docker 构建
+  docker:
+    name: Docker build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      # 只构建不推送；推送交给 publish 任务，避免 PR 中出现凭据。
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          tags: private-drop:ci
+          build-args: |
+            VERSION=${{ github.sha }}
+            COMMIT=${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ------------------------------------------------------------ 安全依赖扫描
+  security:
+    name: Security scan (report only)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.27'
+          cache: true
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      # govulncheck / npm audit 发现问题是“报告”，不阻断流水线：
+      # 避免第三方告警在维护者处理前就卡住全部发布；结果写入 Job Summary。
+      - name: Install govulncheck
+        continue-on-error: true
+        run: go install golang.org/x/vuln/cmd/govulncheck@latest
+
+      - name: govulncheck (Go dependencies)
+        id: govuln
+        continue-on-error: true
+        run: |
+          set +e
+          "$(go env GOPATH)/bin/govulncheck" ./... 2>&1 | tee govulncheck.txt
+          echo "exit_code=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: npm audit (frontend dependencies)
+        id: npm_audit
+        continue-on-error: true
+        working-directory: web
+        run: |
+          set +e
+          npm ci --ignore-scripts >/dev/null 2>&1
+          npm audit --audit-level=high 2>&1 | tee ../npm-audit.txt
+          echo "exit_code=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Write security summary
+        if: always()
+        run: |
+          {
+            echo "## 安全依赖扫描结果（非阻断）"
+            echo ""
+            echo "- govulncheck 退出码: \`${{ steps.govuln.outputs.exit_code }}\`"
+            echo "- npm audit 退出码: \`${{ steps.npm_audit.outputs.exit_code }}\`"
+            echo ""
+            echo "退出码非 0 表示存在已知漏洞或工具报错，请尽快升级依赖并复核。"
+            echo "<details><summary>govulncheck 输出</summary>"
+            echo ""
+            echo '```'
+            cat govulncheck.txt 2>/dev/null || echo '(无输出)'
+            echo '```'
+            echo "</details>"
+            echo "<details><summary>npm audit 输出</summary>"
+            echo ""
+            echo '```'
+            cat npm-audit.txt 2>/dev/null || echo '(无输出)'
+            echo '```'
+            echo "</details>"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # ------------------------------------------------------- 发布镜像到 GHCR
+  publish:
+    name: Publish to GHCR
+    runs-on: ubuntu-latest
+    needs: [backend, frontend, docker]
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+    permissions:
+      contents: write   # 创建 GitHub Release
+      packages: write   # 推送 GHCR 镜像
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # tags 规则：
+      #   - latest        : 仅默认分支(main)推送时更新
+      #   - SemVer        : 来自 v* 标签，如 v1.2.3 -> 1.2.3 / 1.2
+      #   - sha-<commit>  : 每次发布都带，便于精确回滚
+      - name: Docker metadata (tags & labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix=sha-
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            VERSION=${{ steps.meta.outputs.version }}
+            COMMIT=${{ github.sha }}
+            BUILD_DATE=${{ github.event.repository.updated_at }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # 仅在打 v* 标签时自动生成发布说明（无强制格式要求）
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true

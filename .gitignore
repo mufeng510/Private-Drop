@@ -1,0 +1,24 @@
+# Build artifacts
+/dist/
+/data/
+web/node_modules/
+web/dist/*
+!web/dist/index.html
+
+# Go
+*.test
+*.out
+coverage.txt
+
+# Env / secrets
+.env
+*.local
+
+# OS/editor
+.DS_Store
+*.swp
+.idea/
+.vscode/
+
+# temp
+/tmp/

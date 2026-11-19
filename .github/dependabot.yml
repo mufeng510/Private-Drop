@@ -1,0 +1,26 @@
+# Dependabot：Go 模块、前端 npm 依赖、GitHub Actions 均每周检查一次
+version: 2
+updates:
+  - package-ecosystem: gomod
+    directory: "/"
+    schedule:
+      interval: weekly
+      timezone: Asia/Shanghai
+    open-pull-requests-limit: 5
+    labels: [dependencies, go]
+
+  - package-ecosystem: npm
+    directory: "/web"
+    schedule:
+      interval: weekly
+      timezone: Asia/Shanghai
+    open-pull-requests-limit: 5
+    labels: [dependencies, frontend]
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+      timezone: Asia/Shanghai
+    open-pull-requests-limit: 5
+    labels: [dependencies, ci]

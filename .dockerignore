@@ -1,0 +1,37 @@
+# 版本控制 / CI
+.git
+.gitignore
+.github
+
+# 依赖与构建缓存（前端在镜像内重新 npm ci + build）
+node_modules
+web/node_modules
+web/dist/*
+!web/dist/index.html
+dist
+
+# 运行时数据，绝不进入镜像
+data
+**/data
+tmp
+
+# 本地环境 / 密钥 / 临时文件
+.env
+.env.*
+*.local
+*.log
+*.swp
+.DS_Store
+
+# 测试产物
+*.test
+*.out
+coverage.txt
+
+# 文档与仓库元信息（不参与编译）
+docs
+taskbook.md
+Agent.md
+README.md
+README.en.md
+LICENSE

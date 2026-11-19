@@ -1,0 +1,35 @@
+# Private Drop —— 单服务 Docker Compose
+# 设计原则（见 taskbook.md 4.1 / 24）：此处只放部署必需配置；
+# 保存期限、上传限制、设备策略等业务设置请登录管理界面修改。
+#
+# 用法：cp .env.example .env 后按需修改，再执行 docker compose up -d。
+# 权限：容器以 UID 10001 运行。入口脚本会自动修复宿主机 ./data 的属主
+#       （Docker 常把新建的绑定挂载目录建为 root 所有）。若 NAS 不允许容器
+#       root 修改属主，请先手动执行：mkdir -p data && chown -R 10001:10001 data。
+
+name: private-drop
+
+services:
+  private-drop:
+    # 默认本地构建；使用已发布镜像时在 .env 中设置 IMAGE=ghcr.io/<owner>/private-drop:<tag>
+    image: ${IMAGE:-private-drop:local}
+    build:
+      context: .
+      args:
+        VERSION: ${VERSION:-dev}
+    restart: unless-stopped
+
+    # 容器内端口固定 8080；对外端口由 .env 的 PORT 决定，默认 8088:8080
+    ports:
+      - "${PORT:-8088}:8080"
+
+    # 唯一需要持久化的数据目录：db.sqlite（含配置）、files/、tmp/ 均在 /data 下
+    volumes:
+      - ./data:/data
+
+    environment:
+      PORT: "8080"
+      DATA_DIR: /data
+      TZ: ${TZ:-Asia/Shanghai}
+      # 仅当通过 Tunnel/反向代理暴露公网时需要配置（见 .env.example）。
+      TRUSTED_PROXY_CIDRS: ${TRUSTED_PROXY_CIDRS:-}
