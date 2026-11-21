@@ -121,6 +121,7 @@
 - 数据目录 `/data`（含 `db.sqlite` 与 `files/`、`tmp/`），必须独立映射以便 NAS 备份。
 - `docker-entrypoint.sh` 以 root 启动，仅修复绑定挂载目录 `/data` 的属主，随后 `su-exec` 降到 UID 10001；容器主进程始终为非 root。
 - 公网推荐 Cloudflare Tunnel + Access + HTTPS；应用自身鉴权独立有效。
+- 实际生产部署（2026-11-21）：NAS `mufeng@192.168.31.13`（SSH key 免密），compose 目录 `/vol1/1000/temp/docker/private-drop`，容器 `private-drop`（对外端口 31012），镜像跟随 `ghcr.io/mufeng510/private-drop:latest`。首个版本化发布 `v1.0.0`（提交 215729e），GHCR `latest` / `1.0.0` / `1.0` / `sha-215729e` 指向同一 manifest。升级前 `data/` 备份在该目录 `backups/`，旧镜像 ID 记于 `backups/pre-v1.0.0-image.id`。NAS 上 Watchtower 每 2 小时轮询，会自动跟踪 latest。
 - 公网限制已按官方文档（2026）核实：Free/Pro 单请求 100 MB、Business 200 MB、Enterprise 自助最高 5 GB；分片上传仅绕过应用层限制，代理层限制与超时仍在（见 `docs/CLOUDFLARE.md`）。
 
 ## 12. 当前进度（审计后补全完成，2026-11-19 第二轮）
