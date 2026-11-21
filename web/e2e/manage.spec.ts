@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { file, jsonBody, mockApi, seedSession } from './helpers';
+import { device, file, jsonBody, mockApi, rawSettings, seedSession, user } from './helpers';
 
 test.describe('file management', () => {
   test('lists files, filters by tag and runs a batch action', async ({ page }) => {
@@ -99,6 +99,39 @@ test.describe('admin UI', () => {
     await page.getByRole('button', { name: 'Upload limits' }).click();
     await expect(page.getByRole('heading', { name: 'Upload limits' }).first()).toBeVisible();
     await expect(page.getByText('Concurrent uploads')).toBeVisible();
+  });
+
+  test('shows the verification gate when the stored MFA grant is stale', async ({ page }) => {
+    await seedSession(page, { mfa: true });
+    await mockApi(page);
+    // Simulate an expired/revoked token: the server reports it as invalid.
+    await page.route('**/api/auth/me', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ user, device, settings: rawSettings, mfaValid: false }),
+      }),
+    );
+    await page.goto('/admin');
+    await expect(page.getByRole('heading', { name: 'Admin second-factor verification' })).toBeVisible();
+    await expect(page.getByRole('navigation', { name: 'Admin area' })).toHaveCount(0);
+  });
+
+  test('drops back to the gate when an MFA-gated call is rejected', async ({ page }) => {
+    await seedSession(page, { mfa: true });
+    await mockApi(page);
+    // me says the grant is valid (admin opens), but a later gated call rejects
+    // it — e.g. it expired while the admin page was open.
+    await page.route('**/api/settings', (route) =>
+      route.fulfill({
+        status: 403,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: { code: 'MFA_REQUIRED', message: 'secondary verification required' } }),
+      }),
+    );
+    await page.goto('/admin');
+    await expect(page.getByRole('heading', { name: 'Admin second-factor verification' })).toBeVisible();
+    await expect(page.getByText('secondary verification required')).toHaveCount(0);
   });
 });
 

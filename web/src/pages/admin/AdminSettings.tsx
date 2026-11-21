@@ -10,7 +10,7 @@ import { useAuthStore } from '../../store/auth';
 import { useUploadsStore } from '../../store/uploads';
 import { useUiStore, type Language, type Theme } from '../../store/ui';
 import { setLanguage as setI18nLanguage } from '../../i18n';
-import { fromBase64Url, toBase64Url } from '../../lib/webauthn';
+import { fromBase64Url, getAssertion, toBase64Url } from '../../lib/webauthn';
 import { Button, Field, IconButton, TextInput, Toggle, inputClass } from '../../components/ui/primitives';
 import { Icon } from '../../components/ui/Icon';
 
@@ -109,6 +109,14 @@ export function AccountSecurity() {
           attestationObject: toBase64Url(response.attestationObject),
         },
       });
+      // Registering a factor retires the bootstrap grant server-side. Obtain a
+      // fresh real grant so the admin session stays unlocked (mirrors TOTP).
+      const loginOptions = await authApi.passkeyLoginBegin();
+      const requestPub = loginOptions.publicKey as PublicKeyCredentialRequestOptions;
+      if (!requestPub) throw new Error('No WebAuthn options');
+      const assertion = await getAssertion(requestPub);
+      const verified = await authApi.mfaVerify({ type: 'passkey', assertion });
+      useAuthStore.getState().setMfaToken(verified.mfaToken);
       toast(t('common.saved'), 'success');
     } catch (e) {
       toast(errorMessage(e), 'error');

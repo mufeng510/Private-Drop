@@ -16,7 +16,8 @@ export const authApi = {
   init: (data: InitRequest) => request<InitResponse>('/api/auth/init', { method: 'POST', body: data, auth: false }),
   login: (data: LoginRequest) => request<LoginResponse>('/api/auth/login', { method: 'POST', body: data, auth: false }),
   logout: () => request<Record<string, never>>('/api/auth/logout', { method: 'POST' }),
-  me: () => request<MeResponse>('/api/auth/me'),
+  // Include the MFA header so the server can report its validity in mfaValid.
+  me: () => request<MeResponse>('/api/auth/me', { mfa: true }),
   refresh: () => request<{ token: string }>('/api/auth/refresh', { method: 'POST' }),
 
   totpSetup: () => request<TotpSetup>('/api/auth/totp/setup', { method: 'POST', mfa: true }),

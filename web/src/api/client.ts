@@ -1,5 +1,5 @@
 import type { ApiErrorBody } from './types';
-import { authHeaders } from './session';
+import { authHeaders, session } from './session';
 
 const BASE = (import.meta.env?.VITE_API_BASE as string | undefined)?.replace(/\/$/, '') || '';
 
@@ -20,7 +20,11 @@ export function isApiError(e: unknown): e is ApiError {
 
 /** Normalize any thrown value into a user-presentable message. */
 export function errorMessage(e: unknown): string {
-  if (e instanceof ApiError) return e.message;
+  if (e instanceof ApiError) {
+    // The client has already turned this into a re-verification prompt; an
+    // extra "secondary verification required" toast would only confuse.
+    return e.code === 'MFA_REQUIRED' ? '' : e.message;
+  }
   if (e instanceof Error) return e.message;
   if (typeof e === 'string') return e;
   return 'Unknown error';
@@ -95,7 +99,11 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
     throw new ApiError(`Network error: ${errorMessage(e)}`, 'NETWORK', 0);
   }
 
-  if (!res.ok) throw await parseError(res);
+  if (!res.ok) {
+    const err = await parseError(res);
+    if (err.code === 'MFA_REQUIRED') session.invalidateMfa();
+    throw err;
+  }
   if (res.status === 204) return undefined as T;
 
   const contentType = res.headers.get('content-type') || '';
@@ -121,7 +129,11 @@ export async function fetchBinary(path: string, options: RequestOptions = {}): P
   } catch (e) {
     throw new ApiError(`Network error: ${errorMessage(e)}`, 'NETWORK', 0);
   }
-  if (!res.ok) throw await parseError(res);
+  if (!res.ok) {
+    const err = await parseError(res);
+    if (err.code === 'MFA_REQUIRED') session.invalidateMfa();
+    throw err;
+  }
   return res.blob();
 }
 

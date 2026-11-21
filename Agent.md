@@ -135,6 +135,7 @@
   - `docker build -t private-drop:verify .`（三阶段镜像构建成功）；`docker compose up -d` 容器 healthy。
   - 真实 E2E（本地二进制 + Docker 容器两轮）：初始化/防重复初始化、登录、MFA 门禁、设置读写、消息 CRUD/编辑/收藏/置顶、分片上传+合并+SHA-256 去重复用、鉴权下载（字节一致，未登录 401）、回收站与恢复、SPA 回退、11 个读接口 200、未登录访问 401。
   - 真实浏览器（Playwright + 系统 Chrome，连接 Docker 服务）验证：登录页、消息流、管理界面、保存期限值 45、通知开关状态、存储统计真实数字、系统诊断、0 条 console error。
+  - MFA 门禁修复复测（2026-11-21，本机实测）：`go test ./...`、`go vet ./...`、`npm run typecheck`、`npm run lint`、`npm run build` 全通过；`npm test -- --run` 25 测试通过；mock E2E 12 通过（含新增"陈旧 MFA 令牌显示门禁 / 403 回退到门禁"2 条）；真实后端 E2E 3 通过（passkey + 双设备实时 + TOTP，全新数据目录）。新增后端测试 `TestMeReportsMFAValidity`。
 
 ## 13. 已知问题 / 未验证项
 - 已按只读安全审查修复：设备身份改用客户端生成的 `X-Device-Key`（名称不再作为身份，防止审批绕过）；撤销设备立即断开其 WebSocket；MFA 令牌按设备绑定并在登出/注册二次因子时撤销；设备管理接口加 MFA 门禁（一次性码审批除外）；初始化在事务内二次检查，消除并发抢注 TOCTOU。
@@ -156,3 +157,4 @@
 - **Docker 权限**：绑定挂载常由 Docker 建为 root 所有，入口脚本在必要时修复属主后降到非 root，解决首次部署启动失败。
 - **初始化 fail-closed**：带代理头（`X-Forwarded-For` / `CF-Connecting-IP` / `X-Real-IP`）且直接对端不在 `TRUSTED_PROXY_CIDRS` 的初始化请求一律 403，防止公网经 Tunnel 被误判为局域网而抢先初始化；仅有受信任代理时才用 XFF 判定真实 IP。
 - 业务包通过 `events.Sink` 接口发事件，避免 ws/api 循环依赖。
+- **MFA 门禁以服务端为准（2026-11-21 修复）**：前端不能仅凭 localStorage 里存在 `mfaToken` 就判定管理界面已解锁——该令牌 10 分钟过期，且登出/注册二次因子时服务端会撤销。`GET /api/auth/me` 增加 `mfaValid` 字段（校验请求携带的 MFA 令牌），前端 `setMe` 据此同步 `adminUnlocked` 并清除失效令牌；API 客户端收到 403 `MFA_REQUIRED` 时通过 `session.invalidateMfa()` 回调把界面打回验证门禁，且抑制误导性的 "secondary verification required" toast。注册 Passkey 后需用新断言 `mfaVerify` 重新换取令牌（服务端注册因子时会撤销旧令牌），与 TOTP 启用流程保持一致。

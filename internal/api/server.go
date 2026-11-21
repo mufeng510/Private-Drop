@@ -196,6 +196,16 @@ func (s *Server) withAuth(next handler) handler {
 	}
 }
 
+// mfaTokenFromRequest reads the secondary-verification token from either the
+// header or the query string. Shared by the MFA gate and /api/auth/me so the
+// client can ask whether its stored token is still valid.
+func mfaTokenFromRequest(r *http.Request) string {
+	if token := r.Header.Get("X-MFA-Token"); token != "" {
+		return token
+	}
+	return r.URL.Query().Get("mfaToken")
+}
+
 func (s *Server) withMFA(next handler) handler {
 	return func(w http.ResponseWriter, r *http.Request) {
 		p := principal(r)
@@ -203,11 +213,7 @@ func (s *Server) withMFA(next handler) handler {
 			unauthorized(w, "authentication required")
 			return
 		}
-		token := r.Header.Get("X-MFA-Token")
-		if token == "" {
-			token = r.URL.Query().Get("mfaToken")
-		}
-		if !s.auth.ValidateMFA(r.Context(), token, p.UserID, p.DeviceID) {
+		if !s.auth.ValidateMFA(r.Context(), mfaTokenFromRequest(r), p.UserID, p.DeviceID) {
 			writeErr(w, 403, "MFA_REQUIRED", "secondary verification required")
 			return
 		}

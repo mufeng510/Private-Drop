@@ -10,13 +10,16 @@ import { connectRealtime, disconnectRealtime } from './realtime';
 export async function finishLogin(token: string, user: User, device: Device, mfaToken?: string): Promise<void> {
   const auth = useAuthStore.getState();
   auth.setLogin(token, user, device);
-  if (mfaToken) auth.setMfaToken(mfaToken);
+  // A fresh login either carries a new grant or none at all. Always sync this
+  // state so a stale token from a previous session cannot leave the admin UI
+  // unlocked without a valid second-factor grant.
+  auth.setMfaToken(mfaToken ?? null);
   connectRealtime(token);
   await Promise.allSettled([
     useUploadsStore.getState().init(),
     useNotificationsStore.getState().load(),
     useTagsStore.getState().load(),
-    authApi.me().then((me) => useAuthStore.getState().setMe(me.user, me.device, me.settings)),
+    authApi.me().then((me) => useAuthStore.getState().setMe(me.user, me.device, me.settings, me.mfaValid)),
   ]);
 }
 
@@ -28,7 +31,7 @@ export async function finishLogout(): Promise<void> {
 export async function refreshMe(): Promise<void> {
   try {
     const me = await authApi.me();
-    useAuthStore.getState().setMe(me.user, me.device, me.settings);
+    useAuthStore.getState().setMe(me.user, me.device, me.settings, me.mfaValid);
   } catch {
     /* handled by callers */
   }

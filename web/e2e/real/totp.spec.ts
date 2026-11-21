@@ -14,8 +14,16 @@ test('enables TOTP in the browser and logs in with a generated code', async ({ b
   const page = await context.newPage();
   await injectSession(context, admin);
   await page.goto('/admin');
-  // Depending on test order the session may or may not still hold an MFA grant.
+  // Depending on test order the stored MFA grant may be stale (e.g. a passkey
+  // was registered after it was issued, which revokes it server-side). The gate
+  // then correctly asks for a second factor. Enable this pending TOTP secret
+  // first so the code we type is a valid one, then unlock the gate with it.
   if (await page.getByRole('button', { name: '验证并进入' }).isVisible()) {
+    await api('/api/auth/totp/enable', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${admin.token}` },
+      body: JSON.stringify({ code: totpCode(String(gate.secret)) }),
+    });
     await page.locator('input[inputmode="numeric"]').first().fill(totpCode(String(gate.secret)));
     await page.getByRole('button', { name: '验证并进入' }).click();
   }

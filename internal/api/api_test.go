@@ -154,3 +154,73 @@ func TestMFAGateOnSettings(t *testing.T) {
 		t.Fatalf("settings without mfa = %d, want 403", w.Code)
 	}
 }
+
+func TestMeReportsMFAValidity(t *testing.T) {
+	h, _ := newServer(t)
+	// Init issues a bootstrap MFA grant to the first device.
+	w := doReq(h, http.MethodPost, "/api/auth/init",
+		`{"username":"admin","password":"strongpassword","deviceName":"Test PC"}`, "", "127.0.0.1:1234")
+	if w.Code != http.StatusOK {
+		t.Fatalf("init failed: %d %s", w.Code, w.Body.String())
+	}
+	var init struct {
+		Token    string `json:"token"`
+		MFAToken string `json:"mfaToken"`
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), &init); err != nil || init.Token == "" || init.MFAToken == "" {
+		t.Fatalf("init response: %s err=%v", w.Body.String(), err)
+	}
+
+	meWithMFA := func(token, mfa string) bool {
+		t.Helper()
+		r := httptest.NewRequest(http.MethodGet, "/api/auth/me", nil)
+		r.Header.Set("Authorization", "Bearer "+token)
+		if mfa != "" {
+			r.Header.Set("X-MFA-Token", mfa)
+		}
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, r)
+		if rec.Code != http.StatusOK {
+			t.Fatalf("me = %d %s", rec.Code, rec.Body.String())
+		}
+		var body struct {
+			MFAValid bool `json:"mfaValid"`
+		}
+		if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
+			t.Fatalf("me response: %s err=%v", rec.Body.String(), err)
+		}
+		return body.MFAValid
+	}
+
+	if meWithMFA(init.Token, "") {
+		t.Fatal("me without an MFA token must report mfaValid=false")
+	}
+	if !meWithMFA(init.Token, init.MFAToken) {
+		t.Fatal("me with a valid MFA token must report mfaValid=true")
+	}
+	if meWithMFA(init.Token, "bogus-token") {
+		t.Fatal("me with an invalid MFA token must report mfaValid=false")
+	}
+
+	// Logging out revokes the device's MFA grants. After a fresh login the old
+	// stored token must be reported as invalid so the client drops back to the
+	// verification gate instead of showing an admin UI that cannot call APIs.
+	w = doReq(h, http.MethodPost, "/api/auth/logout", "", init.Token, "127.0.0.1:1234")
+	if w.Code != http.StatusOK {
+		t.Fatalf("logout = %d %s", w.Code, w.Body.String())
+	}
+	w = doReq(h, http.MethodPost, "/api/auth/login",
+		`{"username":"admin","password":"strongpassword"}`, "", "127.0.0.1:1234")
+	if w.Code != http.StatusOK {
+		t.Fatalf("re-login = %d %s", w.Code, w.Body.String())
+	}
+	var relogin struct {
+		Token string `json:"token"`
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), &relogin); err != nil || relogin.Token == "" {
+		t.Fatalf("re-login response: %s err=%v", w.Body.String(), err)
+	}
+	if meWithMFA(relogin.Token, init.MFAToken) {
+		t.Fatal("a stored MFA token must be invalid after a logout/re-login")
+	}
+}

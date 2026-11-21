@@ -276,6 +276,8 @@ export interface MeResponse {
   user: User;
   device: Device;
   settings: Settings;
+  /** Whether the current X-MFA-Token is still accepted by the server. */
+  mfaValid: boolean;
 }
 
 export interface TotpSetup {

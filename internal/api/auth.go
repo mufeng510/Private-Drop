@@ -121,7 +121,12 @@ func (s *Server) authMe(w http.ResponseWriter, r *http.Request) {
 		serverErr(w, err)
 		return
 	}
-	writeJSON(w, 200, map[string]any{"user": u, "device": dev, "settings": settings})
+	// Report the authoritative state of the caller's secondary-verification
+	// grant. The client stores this token across reloads, but it can expire or
+	// be revoked server-side; exposing the result here lets the UI show the
+	// verification gate instead of trusting mere token presence.
+	mfaValid := s.auth.ValidateMFA(r.Context(), mfaTokenFromRequest(r), p.UserID, p.DeviceID)
+	writeJSON(w, 200, map[string]any{"user": u, "device": dev, "settings": settings, "mfaValid": mfaValid})
 }
 
 func (s *Server) authRefresh(w http.ResponseWriter, r *http.Request) {

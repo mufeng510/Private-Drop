@@ -13,7 +13,7 @@
 | POST | /api/auth/init | 首次初始化（仅局域网），创建唯一管理员 | `{ username, password, deviceName?, policy? }` | `{ token, user, device }`；初始化后入口关闭 |
 | POST | /api/auth/login | 密码登录 | `{ username, password, deviceName?, totp? }` | `{ token?, user, device, mfaRequired?: "totp"\|"passkey" }` |
 | POST | /api/auth/logout | 主动退出当前会话 | - | `{}` |
-| GET | /api/auth/me | 当前用户与设备 | - | `{ user, device, settings }` |
+| GET | /api/auth/me | 当前用户与设备 | - | `{ user, device, settings, mfaValid }`（`mfaValid` 表示请求携带的 `X-MFA-Token` 是否仍有效；前端据此决定是否显示管理界面二次验证门禁，不再仅凭本地是否有令牌判断） |
 | POST | /api/auth/refresh | 刷新令牌 | - | `{ token }` |
 | POST | /api/auth/totp/setup | 生成 TOTP 密钥 | - | `{ secret, otpauthUrl, qr }` |
 | POST | /api/auth/totp/enable | 启用 TOTP | `{ code }` | `{}` |

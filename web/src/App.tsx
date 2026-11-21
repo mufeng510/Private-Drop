@@ -45,7 +45,7 @@ function Bootstrap({ children }: { children: React.ReactNode }) {
         const me = await authApi.me();
         if (!alive) return;
         setLogin(token, me.user, me.device);
-        setMe(me.user, me.device, me.settings);
+        setMe(me.user, me.device, me.settings, me.mfaValid);
         connectRealtime(token);
         // Contract: upload concurrency is a stored setting. Apply it at bootstrap
         // so a page refresh does not silently reset the manager to the default.

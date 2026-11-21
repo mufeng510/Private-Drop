@@ -118,6 +118,9 @@ export const useUiStore = create<UiState>()((set, get) => ({
   },
 
   toast: (message, tone = 'info') => {
+    // An empty message means "already handled by the UI" (e.g. an expired
+    // MFA token that now shows the verification gate).
+    if (!message) return;
     const id = ++toastSeq;
     set((s) => ({ toasts: [...s.toasts, { id, message, tone }] }));
     setTimeout(() => get().dismissToast(id), 4500);

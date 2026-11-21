@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { errorMessage } from '../api/client';
 import { settingsApi } from '../api/settings';
 import type { Settings } from '../api/types';
 import { useUiStore } from './ui';
@@ -20,7 +21,7 @@ export const useAdminSettings = create<AdminSettingsState>()((set, _get) => ({
       const values = await settingsApi.list();
       set({ values });
     } catch (e) {
-      useUiStore.getState().toast(String(e), 'error');
+      useUiStore.getState().toast(errorMessage(e), 'error');
     } finally {
       set({ loading: false });
     }
@@ -33,7 +34,7 @@ export const useAdminSettings = create<AdminSettingsState>()((set, _get) => ({
       useUiStore.getState().toast('common.saved', 'success');
       useUiStore.getState().bumpData();
     } catch (e) {
-      useUiStore.getState().toast(String(e), 'error');
+      useUiStore.getState().toast(errorMessage(e), 'error');
       throw e;
     }
   },

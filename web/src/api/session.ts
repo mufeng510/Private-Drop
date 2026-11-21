@@ -25,6 +25,14 @@ function write(key: string, value: string | null): void {
 let token: string | null = read(TOKEN_KEY);
 let mfaToken: string | null = read(MFA_KEY);
 
+// Notified when the server rejects a stored MFA token (expired or revoked).
+// The auth store uses this to drop back to the verification gate. Registered
+// from the store so this module stays free of store/API imports (no cycles).
+let onMfaInvalidated: (() => void) | null = null;
+export function setMfaInvalidatedHandler(fn: () => void): void {
+  onMfaInvalidated = fn;
+}
+
 /** Stable device identity. Never use the editable display name for this. */
 export function getDeviceKey(): string {
   let key = read(DEVICE_KEY);
@@ -53,6 +61,12 @@ export const session = {
   setMfaToken: (value: string | null) => {
     mfaToken = value;
     write(MFA_KEY, value);
+  },
+  /** Discard a token the server no longer accepts and notify the UI. */
+  invalidateMfa: () => {
+    mfaToken = null;
+    write(MFA_KEY, null);
+    onMfaInvalidated?.();
   },
   clear: () => {
     token = null;

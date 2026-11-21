@@ -100,7 +100,15 @@ export async function mockApi(page: Page, routes: MockRoute[] = []) {
   const all = [
     ...routes,
     { method: 'GET', path: /^\/api\/auth\/status$/, body: { initialized: true, lanOnly: false } },
-    { method: 'GET', path: /^\/api\/auth\/me$/, body: { user, device, settings: rawSettings } },
+    {
+      method: 'GET',
+      path: /^\/api\/auth\/me$/,
+      // Mirror the server: mfaValid reflects whether an MFA token was sent.
+      body: (request: Request) => ({
+        user, device, settings: rawSettings,
+        mfaValid: Boolean(request.headers()['x-mfa-token']),
+      }),
+    },
     { method: 'GET', path: /^\/api\/notifications$/, body: { items: [], unread: 0 } },
     { method: 'GET', path: /^\/api\/tags$/, body: { items: [] } },
     { method: 'GET', path: /^\/api\/messages$/, body: { items: [], nextCursor: null } },

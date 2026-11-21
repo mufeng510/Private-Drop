@@ -1,8 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ApiError, errorMessage, request } from './client';
+import { setMfaInvalidatedHandler } from './session';
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  setMfaInvalidatedHandler(() => {});
 });
 
 function jsonResponse(body: unknown, status = 200): Response {
@@ -18,6 +20,10 @@ describe('ApiError / errorMessage', () => {
     expect(errorMessage(new Error('boom'))).toBe('boom');
     expect(errorMessage('oops')).toBe('oops');
     expect(errorMessage(42)).toBe('Unknown error');
+  });
+
+  it('suppresses the MFA_REQUIRED message because the gate handles it', () => {
+    expect(errorMessage(new ApiError('secondary verification required', 'MFA_REQUIRED', 403))).toBe('');
   });
 });
 
@@ -66,5 +72,16 @@ describe('request', () => {
   it('handles 204 no-content', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 204 })));
     await expect(request('/api/auth/logout', { method: 'POST' })).resolves.toBeUndefined();
+  });
+
+  it('invalidates the stored MFA grant when the server rejects it', async () => {
+    const onInvalidated = vi.fn();
+    setMfaInvalidatedHandler(onInvalidated);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(jsonResponse({ error: { code: 'MFA_REQUIRED', message: 'secondary verification required' } }, 403)),
+    );
+    await expect(request('/api/settings', { mfa: true })).rejects.toMatchObject({ code: 'MFA_REQUIRED' });
+    expect(onInvalidated).toHaveBeenCalledTimes(1);
   });
 });
