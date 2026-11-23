@@ -138,13 +138,17 @@ test.describe('admin UI', () => {
 test.describe('mobile responsive', () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
-  test('shows bottom navigation and no horizontal overflow at 390px', async ({ page }) => {
+  test('uses the menu drawer for navigation and has no horizontal overflow at 390px', async ({ page }) => {
     await seedSession(page);
     await mockApi(page);
     await page.goto('/');
-    // The sidebar is display:none below md, so its links are not exposed.
+    // The sidebar is display:none below md and the bottom bar has been removed,
+    // so navigation lives behind the menu button.
     await expect(page.getByRole('link', { name: 'Tags', exact: true })).toBeHidden();
-    await expect(page.getByRole('link', { name: 'Settings', exact: true })).toBeVisible(); // bottom nav
+    await expect(page.getByRole('navigation', { name: 'Home' })).toHaveCount(0);
+    await page.getByRole('button', { name: 'Menu' }).click();
+    await expect(page.getByRole('link', { name: 'Tags', exact: true })).toBeVisible(); // menu drawer
+    await expect(page.getByRole('button', { name: 'Admin area' })).toBeVisible();
 
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
     expect(overflow).toBeLessThanOrEqual(1);

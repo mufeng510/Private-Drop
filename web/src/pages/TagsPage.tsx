@@ -175,7 +175,6 @@ export function TagsPage() {
           </ul>
         )}
       </section>
-      <div className="h-16 md:hidden" />
     </div>
   );
 }

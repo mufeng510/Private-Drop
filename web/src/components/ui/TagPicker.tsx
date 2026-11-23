@@ -45,12 +45,16 @@ export function TagPicker({ selectedIds, onChange, compact = false }: { selected
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         className={compact
-          ? 'rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'
-          : 'inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-1.5 text-sm dark:border-slate-600'}
+          ? 'relative inline-flex size-9 shrink-0 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'
+          : 'relative inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-1.5 text-sm dark:border-slate-600'}
       >
         <Icon name="tag" size={16} />
         {!compact && <span>{t('messages.addTag')}</span>}
-        {selectedIds.length > 0 && <span className="rounded-full bg-blue-600 px-1.5 text-[10px] text-white">{selectedIds.length}</span>}
+        {selectedIds.length > 0 && (
+          <span className="absolute -right-1 -top-1 flex min-w-4 items-center justify-center rounded-full bg-blue-600 px-1 text-[10px] font-semibold leading-4 text-white">
+            {selectedIds.length}
+          </span>
+        )}
       </button>
       {open && (
         <div className="absolute left-0 top-full z-50 mt-1 w-60 rounded-xl border border-slate-200 bg-white p-2 shadow-xl dark:border-slate-700 dark:bg-slate-800">

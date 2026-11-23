@@ -6,6 +6,7 @@ import { errorMessage } from '../../api/client';
 import { useMessagesStore } from '../../store/messages';
 import { useUiStore } from '../../store/ui';
 import { formatDateTime, formatRelativeTime, retentionInfo } from '../../lib/format';
+import { copyText } from '../../lib/clipboard';
 import { AttachmentGrid } from './AttachmentGrid';
 import { TagPicker } from '../ui/TagPicker';
 import { TagChip } from '../ui/TagChip';
@@ -146,7 +147,11 @@ export function MessageCard({
           <IconButton icon={message.pinned ? 'pin' : 'pin'} label={message.pinned ? t('messages.unpin') : t('messages.pin')} className={message.pinned ? 'text-amber-600' : ''} disabled={busy} onClick={() => void mutate(() => messagesApi.update(message.id, { pinned: !message.pinned }), { pinned: !message.pinned })} />
           <IconButton icon="star" label={message.favorited ? t('messages.unfavorite') : t('messages.favorite')} className={message.favorited ? 'text-yellow-500' : ''} disabled={busy} onClick={() => void mutate(() => messagesApi.update(message.id, { favorited: !message.favorited }), { favorited: !message.favorited })} />
           {message.text && <IconButton icon="edit" label={t('common.edit')} disabled={busy} onClick={() => { setDraft(message.text); setEditing(true); }} />}
-          {message.text && <IconButton icon="copy" label={t('messages.copyText')} onClick={() => { void navigator.clipboard.writeText(message.text).then(() => toast(t('common.copied'), 'success')).catch(() => undefined); }} />}
+          {message.text && <IconButton icon="copy" label={t('messages.copyText')} onClick={() => {
+            void copyText(message.text)
+              .then(() => toast(t('common.copied'), 'success'))
+              .catch((e) => toast(errorMessage(e), 'error'));
+          }} />}
           <TagPicker compact selectedIds={message.tags?.map((x) => x.id) ?? []} onChange={(ids) => void mutate(() => messagesApi.update(message.id, { tagIds: ids }))} />
           <div className="flex-1" />
           <IconButton icon="trash" label={t('messages.delete')} className="hover:text-red-600" disabled={busy} onClick={() => void doDelete()} />

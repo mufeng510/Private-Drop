@@ -71,7 +71,6 @@ export function NotificationsPage() {
           ))}
         </ul>
       )}
-      <div className="h-16 md:hidden" />
     </div>
   );
 }

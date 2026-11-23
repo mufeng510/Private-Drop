@@ -53,7 +53,6 @@ export function ExpiringPage() {
         setMessages((prev) => [...prev, ...res.items]);
         setCursor(res.nextCursor);
       }} onChanged={() => void load()} emptyTitle={t('expiring.noItems')} showSort={false} />
-      <div className="h-16 md:hidden" />
     </div>
   );
 }

@@ -152,7 +152,6 @@ export function RecyclePage() {
           <Button variant="secondary" onClick={() => restoreIds && void restore(restoreIds, 'original')}>{t('recycle.restoreOriginal')}</Button>
         </div>
       </Modal>
-      <div className="h-16 md:hidden" />
     </div>
   );
 }

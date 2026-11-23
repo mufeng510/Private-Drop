@@ -110,7 +110,6 @@ export function AdminPage() {
           </select>
         </div>
         {render()}
-        <div className="h-16 md:hidden" />
       </div>
     </div>
   );

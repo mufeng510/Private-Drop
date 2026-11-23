@@ -122,6 +122,7 @@
 - `docker-entrypoint.sh` 以 root 启动，仅修复绑定挂载目录 `/data` 的属主，随后 `su-exec` 降到 UID 10001；容器主进程始终为非 root。
 - 公网推荐 Cloudflare Tunnel + Access + HTTPS；应用自身鉴权独立有效。
 - 实际生产部署（2026-11-21）：NAS `mufeng@192.168.31.13`（SSH key 免密），compose 目录 `/vol1/1000/temp/docker/private-drop`，容器 `private-drop`（对外端口 31012），镜像跟随 `ghcr.io/mufeng510/private-drop:latest`。首个版本化发布 `v1.0.0`（提交 215729e），GHCR `latest` / `1.0.0` / `1.0` / `sha-215729e` 指向同一 manifest。升级前 `data/` 备份在该目录 `backups/`，旧镜像 ID 记于 `backups/pre-v1.0.0-image.id`。NAS 上 Watchtower 每 2 小时轮询，会自动跟踪 latest。
+- **`v1.0.1`（2026-11-23）**：UI 交互修正版。代码随 `v1.0.1` 标签发布：复制按钮失败回退与提示、iOS 禁止输入框聚焦自动放大、消息流改为最新在下的聊天式布局、排序与批量控件移到输入框上方、移除移动端底部导航栏、标签数量改为不撑布局的角标。GHCR 新增 `1.0.1` / `1.0` / `sha-<tag commit>`，`latest` 随 main 推送更新；Watchtower 自动拉取 `latest`。发布前本机实测：`go vet` / `go test ./...` / `go build ./...`、typecheck / lint / 25 单测 / build / mock E2E 17 / 真实后端 E2E 3 全通过。
 - 公网限制已按官方文档（2026）核实：Free/Pro 单请求 100 MB、Business 200 MB、Enterprise 自助最高 5 GB；分片上传仅绕过应用层限制，代理层限制与超时仍在（见 `docs/CLOUDFLARE.md`）。
 
 ## 12. 当前进度（审计后补全完成，2026-11-19 第二轮）
@@ -137,6 +138,14 @@
   - 真实 E2E（本地二进制 + Docker 容器两轮）：初始化/防重复初始化、登录、MFA 门禁、设置读写、消息 CRUD/编辑/收藏/置顶、分片上传+合并+SHA-256 去重复用、鉴权下载（字节一致，未登录 401）、回收站与恢复、SPA 回退、11 个读接口 200、未登录访问 401。
   - 真实浏览器（Playwright + 系统 Chrome，连接 Docker 服务）验证：登录页、消息流、管理界面、保存期限值 45、通知开关状态、存储统计真实数字、系统诊断、0 条 console error。
   - MFA 门禁修复复测（2026-11-21，本机实测）：`go test ./...`、`go vet ./...`、`npm run typecheck`、`npm run lint`、`npm run build` 全通过；`npm test -- --run` 25 测试通过；mock E2E 12 通过（含新增"陈旧 MFA 令牌显示门禁 / 403 回退到门禁"2 条）；真实后端 E2E 3 通过（passkey + 双设备实时 + TOTP，全新数据目录）。新增后端测试 `TestMeReportsMFAValidity`。
+  - **前端交互修正（2026-11-23，本机实测）**：
+    - 复制按钮：新增 `web/src/lib/clipboard.ts`，优先用异步 Clipboard API，非安全上下文或失败时回退隐藏 textarea + `execCommand('copy')`；成功/失败都 toast（此前失败被静默吞掉，表现为"点了没反应"）。
+    - iOS 输入框聚焦自动放大：`index.html` viewport 增加 `maximum-scale=1.0, user-scalable=no`（保留 `viewport-fit=cover`）；iOS 10+ 仍允许用户手动捏合缩放。
+    - 消息流改为聊天式布局：仍按 `newest` 拉取最近 30 条（保证首屏是最新消息），在 `MessageStream` 的展示层反转数组，使最早在上、最新在下；"加载更多"哨兵移到顶部，`MessagesPage` 用 `overflow-anchor: none` + 高度差补偿手动锚定滚动位置，避免加载更早消息时跳动。排序 / 多选控制条与批量操作条从顶部移到消息流底部、输入框上方（新增 `chatLayout`、`controlsAtBottom` 两个 props，其他页面默认行为不变）。
+    - 移除移动底部导航栏：删除 `BottomNav.tsx`、`nav.ts` 的 `bottomNav`、各页 `h-16 md:hidden` 占位；移动端改用顶栏汉堡按钮打开侧边菜单；输入框容器底部内边距改为 `env(safe-area-inset-bottom)`。
+    - 验证：`npm run typecheck`、`npm run lint`、`npm test -- --run`（25 通过）、`npm run build`、`npm run test:e2e`（16 通过，含新增 `web/e2e/ui-changes.spec.ts` 的 4 条）；系统 Chrome 截图核对桌面 / 移动布局与 viewport meta。Docker 构建会重新生成 `web/dist`，源码改动可随镜像发布。
+    - 标签数量徽标布局修复（2026-11-23）：`TagPicker` 的 compact 按钮原来把数量 span 内联在图标后面，而 Tailwind Preflight 把 `<svg>` 设为 `display:block`，导致数量换行到图标下方、按钮被撑高，整排操作按钮错位。改为按钮自身 `relative inline-flex size-9`、数量用 `absolute -right-1 -top-1` 角标（不影响布局），所有操作按钮恢复统一 36px 方块。E2E 断言标签按钮与复制按钮尺寸一致。
+    - 复验（含标签修复）：typecheck / lint / 25 单测 / build / E2E 17 通过（新增 1 条标签布局回归），系统 Chrome 截图确认修复前后差异。
 
 ## 13. 已知问题 / 未验证项
 - 已按只读安全审查修复：设备身份改用客户端生成的 `X-Device-Key`（名称不再作为身份，防止审批绕过）；撤销设备立即断开其 WebSocket；MFA 令牌按设备绑定并在登出/注册二次因子时撤销；设备管理接口加 MFA 门禁（一次性码审批除外）；初始化在事务内二次检查，消除并发抢注 TOCTOU。

@@ -241,7 +241,6 @@ export function FilesPage() {
       )}
       {loading && <div className="flex justify-center py-6"><Spinner /></div>}
       {cursor && !loading && <div ref={sentinel} className="h-10" />}
-      <div className="h-16 md:hidden" />
       <FilePreview file={preview} onClose={() => setPreview(null)} />
     </div>
   );

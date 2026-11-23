@@ -76,7 +76,6 @@ export function FavoritesPage() {
           ))}
         </div>
       )}
-      <div className="h-16 md:hidden" />
       <FilePreview file={preview} onClose={() => setPreview(null)} />
     </div>
   );

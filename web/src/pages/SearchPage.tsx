@@ -354,7 +354,6 @@ export function SearchPage() {
           {cursor && <div className="flex justify-center py-5"><Button onClick={() => void loadMore()} disabled={loading}>{t('messages.loadMore')}</Button></div>}
         </>
       )}
-      <div className="h-16 md:hidden" />
       <FilePreview file={preview} onClose={() => setPreview(null)} />
     </div>
   );

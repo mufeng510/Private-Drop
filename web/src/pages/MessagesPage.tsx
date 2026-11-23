@@ -76,9 +76,22 @@ export function MessagesPage() {
     void load();
   }, [load]);
 
+  // In chat layout "load more" prepends older messages above the viewport.
+  // Keep the reader's current position anchored instead of jumping to the top.
+  const handleLoadMore = useCallback(async () => {
+    const el = scrollRef.current;
+    const prevTop = el?.scrollTop ?? 0;
+    const prevHeight = el?.scrollHeight ?? 0;
+    await loadMore();
+    requestAnimationFrame(() => {
+      const node = scrollRef.current;
+      if (node) node.scrollTop = prevTop + (node.scrollHeight - prevHeight);
+    });
+  }, [loadMore]);
+
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div ref={scrollRef} onScroll={onScroll} className="min-h-0 flex-1 overflow-y-auto">
+      <div ref={scrollRef} onScroll={onScroll} style={{ overflowAnchor: 'none' }} className="min-h-0 flex-1 overflow-y-auto">
         {jumpMessage && (
           <div className="mx-auto mt-4 max-w-3xl px-3 sm:px-5">
             <div className="mb-2 flex items-center justify-between rounded-lg bg-blue-50 px-3 py-1.5 text-xs text-blue-700 dark:bg-blue-950/40 dark:text-blue-300">
@@ -93,13 +106,15 @@ export function MessagesPage() {
           pinned={pinned}
           loading={loading}
           hasMore={Boolean(nextCursor)}
-          onLoadMore={loadMore}
+          onLoadMore={() => void handleLoadMore()}
           onChanged={onChanged}
           sort={sort}
           onSortChange={setSort}
+          chatLayout
+          controlsAtBottom
         />
       </div>
-      <div className="shrink-0 border-t border-slate-200 bg-white/80 px-3 pb-20 pt-3 backdrop-blur dark:border-slate-800 dark:bg-slate-900/80 sm:px-5 md:pb-4">
+      <div className="shrink-0 border-t border-slate-200 bg-white/80 px-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 backdrop-blur dark:border-slate-800 dark:bg-slate-900/80 sm:px-5">
         <div className="mx-auto max-w-3xl"><Composer onSent={onChanged} /></div>
       </div>
       <FilePreview file={preview} onClose={() => setPreview(null)} />

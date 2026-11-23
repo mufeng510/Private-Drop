@@ -2,7 +2,6 @@ import { useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import { useUiStore } from '../../store/ui';
 import { Sidebar } from './Sidebar';
-import { BottomNav } from './BottomNav';
 import { TopBar } from './TopBar';
 import { ConfirmDialog, Toasts } from '../ui/Overlays';
 import { Lightbox } from '../Lightbox';
@@ -54,7 +53,6 @@ export function AppShell() {
         </main>
       </div>
 
-      <BottomNav />
       <div className="pointer-events-none fixed left-1/2 top-16 z-20 -translate-x-1/2">
         {wsStatus === 'reconnecting' && (
           <span className="pointer-events-auto rounded-full bg-amber-500/90 px-3 py-1 text-[11px] font-medium text-white shadow">Reconnecting…</span>
