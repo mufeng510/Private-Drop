@@ -157,6 +157,7 @@ export const zhCN = {
     openOriginal: '查看原文',
     selectMode: '多选模式',
     exitSelectMode: '退出多选',
+    noOlder: '没有更早的消息了',
     noExpiry: '长期保留',
     edited: '已编辑',
     attachments: '{{count}} 个附件',

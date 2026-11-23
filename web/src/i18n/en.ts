@@ -159,6 +159,7 @@ export const en: Translation = {
     openOriginal: 'Open original',
     selectMode: 'Selection mode',
     exitSelectMode: 'Exit selection',
+    noOlder: 'No older messages',
     noExpiry: 'Kept forever',
     edited: 'Edited',
     attachments: '{{count}} attachments',

@@ -146,9 +146,17 @@ export function MessageStream({
     <div className="flex justify-center py-6 text-slate-400"><Spinner /></div>
   ) : null;
 
+  // Chat layout loads older messages at the top, so the "end of history"
+  // marker belongs there too (not below the newest message).
+  const endMarkerBlock = !hasMore && messages.length > 0 ? (
+    <p className="py-3 text-center text-xs text-slate-300">
+      — {chatLayout ? t('messages.noOlder') : t('common.none')} —
+    </p>
+  ) : null;
+
   const controls = (
     <>
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-1.5">
         {showSort && (
           <div className="inline-flex rounded-lg border border-slate-200 bg-white p-0.5 dark:border-slate-700 dark:bg-slate-800">
             {sorts.map((s) => (
@@ -157,7 +165,7 @@ export function MessageStream({
                 type="button"
                 onClick={() => onSortChange?.(s)}
                 aria-pressed={sort === s}
-                className={`rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors ${
+                className={`rounded-md px-2 py-1.5 text-xs font-medium transition-colors ${
                   sort === s ? 'bg-blue-600 text-white' : 'text-slate-500 hover:text-slate-800 dark:hover:text-white'
                 }`}
               >
@@ -166,17 +174,24 @@ export function MessageStream({
             ))}
           </div>
         )}
-        <div className="flex-1" />
-        <Button
-          variant={selectMode ? 'primary' : 'secondary'}
-          icon="check"
+        <button
+          type="button"
           onClick={() => {
             setSelectMode((v) => !v);
             setSelected(new Set());
           }}
+          aria-label={selectMode ? t('messages.exitSelectMode') : t('messages.selectMode')}
+          aria-pressed={selectMode}
+          title={selectMode ? t('messages.exitSelectMode') : t('messages.selectMode')}
+          className={`ml-auto inline-flex h-9 w-9 shrink-0 items-center justify-center gap-1.5 rounded-lg border text-xs font-medium transition-colors lg:w-auto lg:px-3 ${
+            selectMode
+              ? 'border-blue-600 bg-blue-600 text-white'
+              : 'border-slate-200 bg-white text-slate-500 hover:text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:text-white'
+          }`}
         >
-          {selectMode ? t('messages.exitSelectMode') : t('messages.selectMode')}
-        </Button>
+          <Icon name="check" size={17} />
+          <span className="hidden lg:inline">{selectMode ? t('messages.exitSelectMode') : t('messages.selectMode')}</span>
+        </button>
       </div>
 
       {selectMode && all.length > 0 && (
@@ -211,11 +226,16 @@ export function MessageStream({
     </>
   );
 
+  const historyBoundary = (
+    <>
+      {loadingBlock}
+      {loadMoreBlock}
+      {endMarkerBlock}
+    </>
+  );
+
   const stream = (
     <>
-      {chatLayout && loadMoreBlock}
-      {chatLayout && loadingBlock}
-
       {pinned.length > 0 && (
         <section aria-label={t('messages.pinned')}>
           <h2 className="mb-2 flex items-center gap-1.5 px-1 text-xs font-semibold uppercase tracking-wide text-amber-600 dark:text-amber-400"><Icon name="pin" size={14} /> {t('messages.pinned')}</h2>
@@ -228,6 +248,8 @@ export function MessageStream({
         </section>
       )}
 
+      {chatLayout && historyBoundary}
+
       {messages.length === 0 && !loading ? (
         <EmptyState icon="message" title={emptyTitle || t('messages.noMessages')} />
       ) : (
@@ -238,9 +260,7 @@ export function MessageStream({
         </div>
       )}
 
-      {!chatLayout && loadingBlock}
-      {!chatLayout && loadMoreBlock}
-      {!hasMore && messages.length > 0 && <p className="py-6 text-center text-xs text-slate-300">— {t('common.none')} —</p>}
+      {!chatLayout && historyBoundary}
     </>
   );
 

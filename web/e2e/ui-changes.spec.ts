@@ -46,6 +46,42 @@ test.describe('chat-style message flow', () => {
     await expect(page.getByRole('button', { name: 'Menu' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Settings', exact: true })).toHaveCount(0);
   });
+
+  test('puts the end-of-history marker above the messages in chat layout', async ({ page }) => {
+    await seedSession(page);
+    await mockApi(page, [
+      { method: 'GET', path: /^\/api\/messages$/, body: () => ({ items: streamMessages(), nextCursor: null }) },
+    ]);
+    await page.goto('/');
+
+    const marker = page.getByText('No older messages');
+    await expect(marker).toBeVisible();
+    const beforeFirstCard = await page.evaluate(() => {
+      const el = [...document.querySelectorAll('main p')].find((p) => p.textContent?.includes('No older messages'))!;
+      const firstCard = document.querySelector('main article')!;
+      return Boolean(el.compareDocumentPosition(firstCard) & Node.DOCUMENT_POSITION_FOLLOWING);
+    });
+    expect(beforeFirstCard).toBe(true);
+  });
+
+  test('keeps the selection toggle compact on mobile', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await seedSession(page);
+    await mockApi(page, [
+      { method: 'GET', path: /^\/api\/messages$/, body: () => ({ items: streamMessages(), nextCursor: null }) },
+    ]);
+    await page.goto('/');
+
+    const toggle = page.getByRole('button', { name: 'Selection mode' });
+    await expect(toggle).toBeVisible();
+    const box = await toggle.boundingBox();
+    expect(box?.width).toBe(36);
+    expect(box?.height).toBe(36);
+
+    await toggle.click();
+    await expect(page.getByRole('button', { name: 'Exit selection' })).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.getByRole('button', { name: 'Select all' })).toBeVisible();
+  });
 });
 
 test.describe('tag button layout', () => {

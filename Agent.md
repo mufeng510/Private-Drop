@@ -123,6 +123,7 @@
 - 公网推荐 Cloudflare Tunnel + Access + HTTPS；应用自身鉴权独立有效。
 - 实际生产部署（2026-11-21）：NAS `mufeng@192.168.31.13`（SSH key 免密），compose 目录 `/vol1/1000/temp/docker/private-drop`，容器 `private-drop`（对外端口 31012），镜像跟随 `ghcr.io/mufeng510/private-drop:latest`。首个版本化发布 `v1.0.0`（提交 215729e），GHCR `latest` / `1.0.0` / `1.0` / `sha-215729e` 指向同一 manifest。升级前 `data/` 备份在该目录 `backups/`，旧镜像 ID 记于 `backups/pre-v1.0.0-image.id`。NAS 上 Watchtower 每 2 小时轮询，会自动跟踪 latest。
 - **`v1.0.1`（2026-11-23）**：UI 交互修正版。代码随 `v1.0.1` 标签发布：复制按钮失败回退与提示、iOS 禁止输入框聚焦自动放大、消息流改为最新在下的聊天式布局、排序与批量控件移到输入框上方、移除移动端底部导航栏、标签数量改为不撑布局的角标。GHCR 镜像（`ghcr.io/mufeng510/private-drop`）发布时 `1.0.1` / `1.0` / `sha-6f67764` / `latest` 指向同一 manifest（version id 1619871453）；发布提交 `6f67764`。之后仅文档的 main 推送（如 `f4d6815`）会让 `latest` 跟进新 manifest，版本标签仍固定在 `6f67764` 的镜像上。GitHub Release：https://github.com/mufeng510/Private-Drop/releases/tag/v1.0.1 。两次 CI（main 45179757906、tag 45179803393）均 success，含真实后端 E2E 与 GHCR 推送。发布前本机实测：`go vet` / `go test ./...` / `go build ./...`、typecheck / lint / 25 单测 / build / mock E2E 17 / 真实后端 E2E 3 全通过。Watchtower 会自动拉取 `latest`。
+- **`v1.0.2`（2026-11-23）**：消息流末标记与多选按钮微调。聊天布局下「— 没有更早的消息了 —」（新增 `messages.noOlder`，中英双语）从底部移到顶部，与加载更多/加载动画同区；多选模式由大号文字按钮改为 36px 图标切换钮，手机上与排序按钮同行，`lg` 起展开文字且高度恒为 36px；排序按钮内边距略收窄。E2E 增至 19 条（新增末标记位置与多选按钮尺寸断言）。代码随标签 `v1.0.2` 发布，GHCR `1.0.2` / `1.0` 指向该版本镜像，`latest` 随 main 推送更新。发布前本机实测：`go vet` / `go test ./...` / `go build ./...`、typecheck / lint / 25 单测 / build / mock E2E 19 全通过。
 - 公网限制已按官方文档（2026）核实：Free/Pro 单请求 100 MB、Business 200 MB、Enterprise 自助最高 5 GB；分片上传仅绕过应用层限制，代理层限制与超时仍在（见 `docs/CLOUDFLARE.md`）。
 
 ## 12. 当前进度（审计后补全完成，2026-11-19 第二轮）
@@ -146,6 +147,7 @@
     - 验证：`npm run typecheck`、`npm run lint`、`npm test -- --run`（25 通过）、`npm run build`、`npm run test:e2e`（16 通过，含新增 `web/e2e/ui-changes.spec.ts` 的 4 条）；系统 Chrome 截图核对桌面 / 移动布局与 viewport meta。Docker 构建会重新生成 `web/dist`，源码改动可随镜像发布。
     - 标签数量徽标布局修复（2026-11-23）：`TagPicker` 的 compact 按钮原来把数量 span 内联在图标后面，而 Tailwind Preflight 把 `<svg>` 设为 `display:block`，导致数量换行到图标下方、按钮被撑高，整排操作按钮错位。改为按钮自身 `relative inline-flex size-9`、数量用 `absolute -right-1 -top-1` 角标（不影响布局），所有操作按钮恢复统一 36px 方块。E2E 断言标签按钮与复制按钮尺寸一致。
     - 复验（含标签修复）：typecheck / lint / 25 单测 / build / E2E 17 通过（新增 1 条标签布局回归），系统 Chrome 截图确认修复前后差异。
+    - 消息流末标记与多选按钮优化（2026-11-23，本机实测）：聊天式布局下「— 没有更早的消息了 —」从消息流底部移到顶部（紧邻消息列表之前、置顶区之后），与「加载更多」哨兵同侧；文案新增 `messages.noOlder`（中英双语，i18n 键值一致性由测试保证）。多选模式由带文字的大号次要按钮改为 36px 方块图标切换钮，与大屏显示文字（`lg` 起展开，高度始终 36px）；排序按钮内边距略收窄，使两者在手机同一行显示。E2E 增至 19 条（新增末标记位置与多选按钮尺寸断言），typecheck / lint / 25 单测 / build 全通过，截图核对桌面与移动布局。
 
 ## 13. 已知问题 / 未验证项
 - 已按只读安全审查修复：设备身份改用客户端生成的 `X-Device-Key`（名称不再作为身份，防止审批绕过）；撤销设备立即断开其 WebSocket；MFA 令牌按设备绑定并在登出/注册二次因子时撤销；设备管理接口加 MFA 门禁（一次性码审批除外）；初始化在事务内二次检查，消除并发抢注 TOCTOU。
