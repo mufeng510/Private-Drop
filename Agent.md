@@ -122,7 +122,7 @@
 - `docker-entrypoint.sh` 以 root 启动，仅修复绑定挂载目录 `/data` 的属主，随后 `su-exec` 降到 UID 10001；容器主进程始终为非 root。
 - 公网推荐 Cloudflare Tunnel + Access + HTTPS；应用自身鉴权独立有效。
 - 实际生产部署（2026-11-21）：NAS `mufeng@192.168.31.13`（SSH key 免密），compose 目录 `/vol1/1000/temp/docker/private-drop`，容器 `private-drop`（对外端口 31012），镜像跟随 `ghcr.io/mufeng510/private-drop:latest`。首个版本化发布 `v1.0.0`（提交 215729e），GHCR `latest` / `1.0.0` / `1.0` / `sha-215729e` 指向同一 manifest。升级前 `data/` 备份在该目录 `backups/`，旧镜像 ID 记于 `backups/pre-v1.0.0-image.id`。NAS 上 Watchtower 每 2 小时轮询，会自动跟踪 latest。
-- **`v1.0.1`（2026-11-23）**：UI 交互修正版。代码随 `v1.0.1` 标签发布：复制按钮失败回退与提示、iOS 禁止输入框聚焦自动放大、消息流改为最新在下的聊天式布局、排序与批量控件移到输入框上方、移除移动端底部导航栏、标签数量改为不撑布局的角标。GHCR 新增 `1.0.1` / `1.0` / `sha-<tag commit>`，`latest` 随 main 推送更新；Watchtower 自动拉取 `latest`。发布前本机实测：`go vet` / `go test ./...` / `go build ./...`、typecheck / lint / 25 单测 / build / mock E2E 17 / 真实后端 E2E 3 全通过。
+- **`v1.0.1`（2026-11-23）**：UI 交互修正版。代码随 `v1.0.1` 标签发布：复制按钮失败回退与提示、iOS 禁止输入框聚焦自动放大、消息流改为最新在下的聊天式布局、排序与批量控件移到输入框上方、移除移动端底部导航栏、标签数量改为不撑布局的角标。GHCR 镜像（`ghcr.io/mufeng510/private-drop`）`1.0.1` / `1.0` / `sha-6f67764` / `latest` 四个标签指向同一 manifest（version id 1619871453）；发布提交 `6f67764`。GitHub Release：https://github.com/mufeng510/Private-Drop/releases/tag/v1.0.1 。两次 CI（main 45179757906、tag 45179803393）均 success，含真实后端 E2E 与 GHCR 推送。发布前本机实测：`go vet` / `go test ./...` / `go build ./...`、typecheck / lint / 25 单测 / build / mock E2E 17 / 真实后端 E2E 3 全通过。Watchtower 会自动拉取 `latest`。
 - 公网限制已按官方文档（2026）核实：Free/Pro 单请求 100 MB、Business 200 MB、Enterprise 自助最高 5 GB；分片上传仅绕过应用层限制，代理层限制与超时仍在（见 `docs/CLOUDFLARE.md`）。
 
 ## 12. 当前进度（审计后补全完成，2026-11-19 第二轮）
